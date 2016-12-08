@@ -1,5 +1,6 @@
 package org.kritikal.fabric.core;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.function.Function;
@@ -17,6 +18,19 @@ public class VertxHelpers {
      * @return object after its compute expression has been applied.
      */
     public static JsonObject compute(Object lock, JsonObject object, Function<JsonObject, JsonObject> compute) {
+        synchronized (lock) {
+            return compute.apply(object);
+        }
+    }
+
+    /**
+     * Thread-safety helper for JsonArrays.
+     * @param lock object holding a mutex for this json object (hierarchy)
+     * @param object parameter to pass to the compute expression
+     * @param compute expression to evalute inside synchronized context
+     * @return object after its compute expression has been applied.
+     */
+    public static JsonArray compute(Object lock, JsonArray object, Function<JsonArray, JsonArray> compute) {
         synchronized (lock) {
             return compute.apply(object);
         }

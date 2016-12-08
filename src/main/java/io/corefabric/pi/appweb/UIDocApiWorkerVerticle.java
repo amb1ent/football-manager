@@ -2,6 +2,7 @@ package io.corefabric.pi.appweb;
 
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
+import org.amb1ent.demo.fm.HomepageProvider;
 import org.kritikal.fabric.core.VERTXDEFINES;
 import org.kritikal.fabric.core.Configuration;
 import org.kritikal.fabric.core.ConfigurationManager;
@@ -66,8 +67,11 @@ public class UIDocApiWorkerVerticle extends org.kritikal.fabric.db.pgsql.DWWorke
         IDocApiProvider provider = null;
         switch (apicall.getString("path")) {
             // /home (or /)
-            case HomeProvider.PATH:
-                provider = new HomeProvider();
+            //case HomeProvider.PATH:
+            //    provider = new HomeProvider();
+            //    break;
+            case HomepageProvider.PATH:
+                provider = new HomepageProvider();
                 break;
             case DtnConfigProvider.PATH:
                 provider = new DtnConfigProvider();
