@@ -64,4 +64,8 @@ oh and then run it.
 
 ```
 (cd a2/ && ./build.sh) && ./gradlew runShadow
+...
+INFO: ONLINE, press ^C to exit.
 ```
+
+last line indicates success...  on success please browse http://localhost:1080/ :-)
