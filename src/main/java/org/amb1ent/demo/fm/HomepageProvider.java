@@ -4,6 +4,7 @@ import io.corefabric.pi.appweb.DocApiCall;
 import io.corefabric.pi.appweb.IDocApiProvider;
 import io.corefabric.pi.appweb.UIDocApiWorkerVerticle;
 import io.corefabric.pi.appweb.providers.HomeProvider;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -27,21 +28,26 @@ public class HomepageProvider implements IDocApiProvider {
 
     private DocApiCall __init(UIDocApiWorkerVerticle.Context context) {
         DocApiCall call = new DocApiCall(context, context.cfg.instancekey + PATH);
-        final String dataTopic = "|model/teams";
-        final String dataTeamTopicPrefix = "|model/team/";
-        final IMqttBroker broker = MqttBrokerVerticle.mqttBroker();
+        __prepare(call);
+        return call;
+    }
+
+    final static String dataTopic = "|model/teams";
+    final static String dataTeamTopicPrefix = "|model/team/";
+    final static IMqttBroker broker = MqttBrokerVerticle.mqttBroker();
+
+    private void __prepare(DocApiCall call) {
         JsonObject mqttMessage = broker.apiPeek(dataTopic);
-        String content = null;
-        if (mqttMessage != null && mqttMessage.containsKey("body")) {
-            try {
-                content = new String(mqttMessage.getBinary("body"), "UTF-8");
-            } catch (UnsupportedEncodingException uee) {
-                logger.fatal("", uee);
-                content = "[]";
+        String content = "[]";
+        if (mqttMessage != null) {
+            if (mqttMessage.containsKey("body")) {
+                try {
+                    content = new String(mqttMessage.getBinary("body"), "UTF-8");
+                } catch (UnsupportedEncodingException uee) {
+                    logger.fatal("", uee);
+                    content = "[]";
+                }
             }
-        }
-        else {
-            content = "[]";
         }
         JsonArray teams = new JsonArray(content);
         if (teams.size() == 0) {
@@ -62,13 +68,13 @@ public class HomepageProvider implements IDocApiProvider {
             }
             final String topic = dataTeamTopicPrefix + team.getString("id");
             try {
-                broker.apiPublish(topic, team.encode().getBytes("UTF-8"), 0, false);
+                broker.apiPublish(topic, team.encode().getBytes("UTF-8"), 0, true);
             } catch (UnsupportedEncodingException uee) {
                 logger.fatal("", uee);
             }
         }
         try {
-            broker.apiPublish(dataTopic, teams.encode().getBytes("UTF-8"), 0, false);
+            broker.apiPublish(dataTopic, teams.encode().getBytes("UTF-8"), 0, true);
         } catch (UnsupportedEncodingException uee) {
             logger.fatal("", uee);
         }
@@ -76,19 +82,38 @@ public class HomepageProvider implements IDocApiProvider {
             call.o.put("teams", t);
             return t;
         });
-        return call;
     }
 
     private DocApiCall __reinit(UIDocApiWorkerVerticle.Context context) {
         DocApiCall call = new DocApiCall(context, context.cfg.instancekey + PATH, context.apicall.getJsonObject("ad").getJsonObject("data"));
+        __prepare(call);
         return call;
     }
 
     private void __complete(DocApiCall call) {
-        // TODO: flesh out data structure
+
+        JsonArray teams = call.o.getJsonArray("teams");
+        for (int i = 0, l = teams.size(); i < l; ++i) {
+            final JsonObject team = teams.getJsonObject(i);
+            if (!team.containsKey("id")) {
+                team.put("id", UUID.randomUUID().toString());
+            }
+            final String topic = dataTeamTopicPrefix + team.getString("id");
+            try {
+                broker.apiPublish(topic, team.encode().getBytes("UTF-8"), 0, true);
+            } catch (UnsupportedEncodingException uee) {
+                logger.fatal("", uee);
+            }
+        }
+        try {
+            broker.apiPublish(dataTopic, teams.encode().getBytes("UTF-8"), 0, true);
+        } catch (UnsupportedEncodingException uee) {
+            logger.fatal("", uee);
+        }
+
         // if changed:
-        //if (!currentCall.getOrDefault(call.context.cfg.instancekey, call.uuid).equals(call.uuid)) return;
-        //call.publish();
+        if (call.hasExited()) return;
+        call.publish();
     }
 
     @Override
@@ -113,4 +138,19 @@ public class HomepageProvider implements IDocApiProvider {
 
     @Override
     public void upsert(UIDocApiWorkerVerticle.Context context) { throw new FabricError(); }
+
+    public void add_team(UIDocApiWorkerVerticle.Context context) {
+        DocApiCall call = __reinit(context);
+
+        call.publish();
+        call.reply();
+
+        final JsonArray teams = call.o.getJsonArray("teams");
+        final JsonArray args = context.apicall.getJsonArray("args");
+        if (args != null && args.size() > 0) {
+            teams.add(args.getJsonObject(0));
+        }
+
+        __complete(call);
+    }
 }

@@ -11,6 +11,17 @@ class HomeConfig extends FabricConfig { }
 class HomeUI extends FabricUI { }
 class HomeApiDoc {}
 
+export class Team {
+    id:string;
+    name:string;
+    city:string;
+    owner:string;
+    stadium_capacity:number;
+    competition:string;
+    n_players:number;
+    date_created:string;
+}
+
 @Component({
     selector: 'home-detail',
     templateUrl: 'app/views/home.component.html'
@@ -22,6 +33,7 @@ export class HomeComponent implements OnChanges {
     }
 
     apipage:FabricApiPage = null;
+    newTeam:Team = new Team();
 
     ngOnInit() {
         let c:HomeConfig = new HomeConfig();
@@ -41,5 +53,13 @@ export class HomeComponent implements OnChanges {
         this.apipage = null;
     }
 
+    addTeam() {
+        var t:Team = this.newTeam;
+        if (t.name == null || t.name == '') return;
+        this.newTeam = new Team();
+        this.fabricDocApi.call(this.apipage, 'add_team', [t], (ad)=>{
+            // component.doSomethingElse(...)
+        });
+    }
 
 }

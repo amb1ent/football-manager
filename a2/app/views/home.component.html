@@ -2,6 +2,18 @@
     home copy
 </p>
 
+<form action="#" onsubmit="return false;">
+    <h3>Add Team...</h3>
+    <input name="newTeamName" type="text" placeholder="Team Name" [(ngModel)]="newTeam.name" /><br />
+    <input name="newTeamCity" type="text" placeholder="City" [(ngModel)]="newTeam.city" /><br />
+    <input name="newTeamOwner" type="text" placeholder="Owner" [(ngModel)]="newTeam.owner" /><br />
+    <input name="newTeamStadiumCapacity" type="number" placeholder="Stadium Capacity" [(ngModel)]="newTeam.stadium_capacity" /><br />
+    <input name="newTeamCompetition" type="text" placeholder="Competition" [(ngModel)]="newTeam.competition" /><br />
+    <input name="newTeamNPlayers" type="number" placeholder="Number of Players" [(ngModel)]="newTeam.n_players" /><br />
+    <input name="newTeamDateCreated" type="text" placeholder="Date Created" [(ngModel)]="newTeam.date_created" /><br />
+    <button (click)="addTeam()">Add Team</button>
+</form>
+
 <pre>{{ apipage.data | json }}</pre>
 
 <div class="row"  *ngIf="!ui.isLoggedIn">
