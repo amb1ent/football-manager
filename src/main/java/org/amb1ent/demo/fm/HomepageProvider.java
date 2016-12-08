@@ -117,29 +117,31 @@ public class HomepageProvider implements IDocApiProvider {
     }
 
     @Override
-    public void open_singleton(UIDocApiWorkerVerticle.Context context) {
+    public DocApiCall open_singleton(UIDocApiWorkerVerticle.Context context) {
         DocApiCall call = __init(context);
 
         call.publish();
         call.reply();
 
         __complete(call);
+
+        return call;
     }
 
     @Override
-    public void open(UIDocApiWorkerVerticle.Context context) {
+    public DocApiCall open(UIDocApiWorkerVerticle.Context context) {
         throw new FabricError();
     }
 
     @Override
-    public void list(UIDocApiWorkerVerticle.Context context) {
+    public DocApiCall list(UIDocApiWorkerVerticle.Context context) {
         throw new FabricError();
     }
 
     @Override
-    public void upsert(UIDocApiWorkerVerticle.Context context) { throw new FabricError(); }
+    public DocApiCall upsert(UIDocApiWorkerVerticle.Context context) { throw new FabricError(); }
 
-    public void add_team(UIDocApiWorkerVerticle.Context context) {
+    public DocApiCall add_team(UIDocApiWorkerVerticle.Context context) {
         DocApiCall call = __reinit(context);
 
         call.publish();
@@ -152,5 +154,7 @@ public class HomepageProvider implements IDocApiProvider {
         }
 
         __complete(call);
+
+        return call;
     }
 }

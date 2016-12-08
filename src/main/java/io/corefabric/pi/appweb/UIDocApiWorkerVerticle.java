@@ -18,13 +18,14 @@ import java.lang.reflect.InvocationTargetException;
 public class UIDocApiWorkerVerticle extends org.kritikal.fabric.db.pgsql.DWWorkerVerticle {
 
     public static class Context {
-        public Context(Message<JsonObject> message, Configuration cfg, ConnectionInformation ci, JsonObject apicall, String corefabric)
+        public Context(Message<JsonObject> message, Configuration cfg, ConnectionInformation ci, JsonObject apicall, String corefabric, IDocApiHost host)
         {
             this.message = message;
             this.cfg = cfg;
             this.ci = ci;
             this.apicall = apicall;
             this.corefabric = corefabric;
+            this.host = host;
         }
 
         public final Message<JsonObject> message;
@@ -32,6 +33,7 @@ public class UIDocApiWorkerVerticle extends org.kritikal.fabric.db.pgsql.DWWorke
         public final ConnectionInformation ci;
         public final JsonObject apicall;
         public final String corefabric;
+        public final IDocApiHost host;
     }
 
     @Override
@@ -63,7 +65,8 @@ public class UIDocApiWorkerVerticle extends org.kritikal.fabric.db.pgsql.DWWorke
     }
 
     void handle(Message<JsonObject> message, Configuration cfg, ConnectionInformation ci, JsonObject apicall, String corefabric) throws Throwable {
-        final Context context = new Context(message, cfg, ci, apicall, corefabric);
+        final IDocApiHost host = new StreamingResultsHost();
+        final Context context = new Context(message, cfg, ci, apicall, corefabric, host);
         IDocApiProvider provider = null;
         switch (apicall.getString("path")) {
             // /home (or /)
@@ -87,7 +90,8 @@ public class UIDocApiWorkerVerticle extends org.kritikal.fabric.db.pgsql.DWWorke
             return;
         }
         try {
-            provider.getClass().getDeclaredMethod(apicall.getString("method"), Context.class).invoke(provider, context);
+            DocApiCall call = (DocApiCall) provider.getClass().getDeclaredMethod(apicall.getString("method"), Context.class).invoke(provider, context);
+            call.finish();
         }
         catch (InvocationTargetException ite) {
             throw ite.getCause();

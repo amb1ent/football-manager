@@ -16,7 +16,6 @@ import java.util.UUID;
  * Created by ben on 03/11/2016.
  */
 public final class DocApiCall {
-    private final static Logger logger  = LoggerFactory.getLogger(DocApiCall.class);
     public DocApiCall(UIDocApiWorkerVerticle.Context context, String topic) {
         this.context = context;
         this.unique = "$/" + context.corefabric + "/api/u/" + CoreFabric.ServerConfiguration.zone + "/" + CoreFabric.ServerConfiguration.name + "/" + topic + "/|";
@@ -43,19 +42,16 @@ public final class DocApiCall {
     public final String statusTopic;
     public final JsonObject o;
     public final UIDocApiWorkerVerticle.Context context;
+
     public final void publish() {
-        try {
-            MqttBrokerVerticle.mqttBroker().apiPublish(topic, VertxHelpers.toString(o, o).getBytes("UTF-8"), 2, true);
-        } catch (UnsupportedEncodingException ue) {
-            logger.warn(ue);
-        }
+        context.host.publish(this);
     }
 
     public final void reply() {
-        JsonObject reply = new JsonObject();
-        reply.put("success", true);
-        reply.put("topic", topic);
-        reply.put("statusTopic", statusTopic);
-        context.message.reply(reply, VERTXDEFINES.DELIVERY_OPTIONS);
+        context.host.reply(this);
+    }
+
+    public final void finish() {
+        context.host.finish(this);
     }
 }

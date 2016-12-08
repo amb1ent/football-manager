@@ -8,12 +8,12 @@ package io.corefabric.pi.appweb;
  */
 public interface IDocApiProvider {
 
-    void open_singleton(UIDocApiWorkerVerticle.Context context);
+    DocApiCall open_singleton(UIDocApiWorkerVerticle.Context context);
 
-    void open(UIDocApiWorkerVerticle.Context context);
+    DocApiCall open(UIDocApiWorkerVerticle.Context context);
 
-    void list(UIDocApiWorkerVerticle.Context context);
+    DocApiCall list(UIDocApiWorkerVerticle.Context context);
 
-    void upsert(UIDocApiWorkerVerticle.Context context);
+    DocApiCall upsert(UIDocApiWorkerVerticle.Context context);
 
 }
