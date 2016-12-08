@@ -7,7 +7,6 @@ import org.kritikal.fabric.core.VERTXDEFINES;
 import org.kritikal.fabric.core.Configuration;
 import org.kritikal.fabric.core.ConfigurationManager;
 import io.corefabric.pi.appweb.providers.DtnConfigProvider;
-import io.corefabric.pi.appweb.providers.HomeProvider;
 import org.kritikal.fabric.db.pgsql.ConnectionInformation;
 
 import java.lang.reflect.InvocationTargetException;
@@ -41,11 +40,13 @@ public class UIDocApiWorkerVerticle extends org.kritikal.fabric.db.pgsql.DWWorke
         final String instancekey = message.body().getString("instancekey");
         final JsonObject apicall = message.body().getJsonObject("payload");
         final String corefabric = message.body().getString("corefabric");
+        final boolean rest = message.body().containsKey("rest");
         ConfigurationManager.getConfigurationAsync(vertx, instancekey, cfg -> {
             try {
                 final ConnectionInformation ci = connect(cfg);
                 try {
-                    handle(message, cfg, ci, apicall, corefabric);
+                    final IDocApiHost host = rest ? new OneShotResultsHost() : new StreamingResultsHost();
+                    handle(host, message, cfg, ci, apicall, corefabric);
                 }
                 finally {
                     release(ci);
@@ -64,8 +65,7 @@ public class UIDocApiWorkerVerticle extends org.kritikal.fabric.db.pgsql.DWWorke
         });
     }
 
-    void handle(Message<JsonObject> message, Configuration cfg, ConnectionInformation ci, JsonObject apicall, String corefabric) throws Throwable {
-        final IDocApiHost host = new StreamingResultsHost();
+    void handle(final IDocApiHost host, Message<JsonObject> message, Configuration cfg, ConnectionInformation ci, JsonObject apicall, String corefabric) throws Throwable {
         final Context context = new Context(message, cfg, ci, apicall, corefabric, host);
         IDocApiProvider provider = null;
         switch (apicall.getString("path")) {

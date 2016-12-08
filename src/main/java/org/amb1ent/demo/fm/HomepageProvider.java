@@ -1,18 +1,27 @@
 package org.amb1ent.demo.fm;
 
+import io.corefabric.pi.AppWebServerVerticle;
 import io.corefabric.pi.appweb.DocApiCall;
 import io.corefabric.pi.appweb.IDocApiProvider;
 import io.corefabric.pi.appweb.UIDocApiWorkerVerticle;
 import io.corefabric.pi.appweb.providers.HomeProvider;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.ext.web.Router;
 import org.kritikal.fabric.CoreFabric;
+import org.kritikal.fabric.core.VERTXDEFINES;
 import org.kritikal.fabric.core.VertxHelpers;
 import org.kritikal.fabric.core.exceptions.FabricError;
 import org.kritikal.fabric.daemon.MqttBrokerVerticle;
+import org.kritikal.fabric.net.http.CorsOptionsHandler;
 import org.kritikal.fabric.net.mqtt.IMqttBroker;
 import org.kritikal.fabric.net.mqtt.MqttBroker;
 
@@ -23,6 +32,44 @@ import java.util.UUID;
  * Created by ben on 08/12/2016.
  */
 public class HomepageProvider implements IDocApiProvider {
+
+    public static void addRoutes(final Vertx vertx, final Router router, final String prefix, final CorsOptionsHandler corsOptionsHandler) {
+        router.options(prefix + PATH).handler(corsOptionsHandler);
+        router.get(prefix + PATH).handler(rc -> {
+            final HttpServerRequest req = rc.request();
+            final String instancekey = "demo"; //FIXME
+            final String corefabric = AppWebServerVerticle.cookieCutter(req);
+            final JsonObject apicall = new JsonObject();
+            apicall.put("path", PATH);
+            apicall.put("method", "open_singleton");
+            apicall.put("args", new JsonArray());
+
+            JsonObject o = new JsonObject();
+            o.put("instancekey", instancekey);
+            o.put("payload", apicall);
+            o.put("corefabric", corefabric);
+            o.put("rest", true);
+
+            vertx.eventBus().send("ui.docapi", o, VERTXDEFINES.DELIVERY_OPTIONS, new Handler<AsyncResult<Message<JsonObject>>>() {
+                @Override
+                public void handle(AsyncResult<Message<JsonObject>> asyncResult) {
+                    if (asyncResult.succeeded()) {
+                        final JsonObject event = asyncResult.result().body();
+                        req.response().headers().add("Access-Control-Allow-Credentials", "true");
+                        String optionsOrigin = req.headers().get("Origin");
+                        if (optionsOrigin == null) optionsOrigin = "*";
+                        req.response().headers().add("Access-Control-Allow-Origin", optionsOrigin);
+                        req.response().headers().add("Content-Type", "application/json; charset=UTF-8");
+                        req.response().end(event.encode());
+                    } else {
+                        req.response().setStatusCode(500).end();
+                    }
+                }
+            });
+
+        });
+    }
+
     private final static Logger logger = LoggerFactory.getLogger(HomepageProvider.class);
     public final static String PATH = "/home";
 

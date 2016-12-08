@@ -14,6 +14,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
+import org.amb1ent.demo.fm.HomepageProvider;
 import org.kritikal.fabric.CoreFabric;
 import org.kritikal.fabric.core.exceptions.FabricError;
 import org.kritikal.fabric.daemon.MqttBrokerVerticle;
@@ -38,7 +39,7 @@ public class AppWebServerVerticle extends AbstractVerticle {
     final Logger logger = LoggerFactory.getLogger(AppWebServerVerticle.class);
     HttpServer server = null;
 
-    private static String cookieCutter(HttpServerRequest req) {
+    public static String cookieCutter(HttpServerRequest req) {
         String corefabric = null;
         try {
             String cookies = req.headers().get("Cookie");
@@ -64,7 +65,7 @@ public class AppWebServerVerticle extends AbstractVerticle {
         return corefabric;
     }
 
-    private static String cookieCutter(ServerWebSocket webSocket) {
+    public static String cookieCutter(ServerWebSocket webSocket) {
         String corefabric = null;
         try {
             String cookies = webSocket.headers().get("Cookie");
@@ -108,6 +109,10 @@ public class AppWebServerVerticle extends AbstractVerticle {
         NodeMonitorJson.addRoute(router, corsOptionsHandler);
         DtnConfigJson.addRoute(router, corsOptionsHandler);
         StatusJson.addRoute(router, corsOptionsHandler);
+        {
+            final String prefix = "/api/rest";
+            HomepageProvider.addRoutes(vertx, router, prefix, corsOptionsHandler);
+        }
         router.post("/api/doc").blockingHandler(rc -> {
             HttpServerRequest req = rc.request();
             JsonObject body = rc.getBodyAsJson();

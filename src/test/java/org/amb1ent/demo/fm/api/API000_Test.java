@@ -3,6 +3,7 @@ package org.amb1ent.demo.fm.api;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -82,4 +83,18 @@ public class API000_Test extends CoreFabricUnitTest {
         Assert.assertTrue(jsonObject.getBoolean("up"));
     }
 
+    @Test
+    public void api001_CheckHomepageGet(TestContext context) {
+        Vertx vertx = rule.vertx();
+
+        final String data = get("http://localhost:1080/api/rest/home");
+        Assert.assertNotNull(data);
+        JsonObject jsonObject = new JsonObject(data);
+        Assert.assertNotNull(jsonObject);
+        Assert.assertTrue(jsonObject.containsKey("o"));
+        JsonObject o = jsonObject.getJsonObject("o");
+        Assert.assertTrue(o.containsKey("teams"));
+        JsonArray teams = o.getJsonArray("teams");
+        Assert.assertTrue(teams.size() > 0);
+    }
 }
